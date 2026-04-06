@@ -1,78 +1,56 @@
 # Fitness Coach Hybrid Skill (AI Edge Gallery format)
 
-> Product role: **lightweight local session coach** (not just a readiness calculator).
+This repository is now structured like an AI Edge Gallery skill:
 
-## Repository contents
+- `SKILL.md` with frontmatter metadata + invocation instructions.
+- `scripts/index.html` as Gallery JS entrypoint exposing `ai_edge_gallery_get_result`.
+- `scripts/readiness-core.js` containing readiness and intensity logic.
+- `assets/` JSON reference files for tracking types and exercise metadata.
 
-```text
-SKILL.md
-scripts/index.html
-scripts/readiness-core.js
-assets/exercise_catalog.json
-assets/exercise_metadata.json
-assets/tracking_types.json
-assets/training_reference.json
-tests/readiness-core.test.js
+## Implemented behavior
+
+- Unified support for `gym`, `callanetics`, `hybrid`.
+- Recovery/readiness remains "silent" by design and should only be surfaced in workout flows.
+- Readiness statuses: `ready`, `caution`, `recover`.
+
+## JS invocation payload
+
+```json
+{
+  "action": "compute_readiness",
+  "nowIso": "2026-04-06T12:00:00Z",
+  "sleepHoursLastNight": 6.5,
+  "energyToday": 5,
+  "sessions": [
+    {
+      "startedAt": "2026-04-05T18:30:00Z",
+      "modality": "callanetics",
+      "entries": [
+        {
+          "exerciseId": "side_leg_lift_hold",
+          "intensity": "medium",
+          "primary": ["glutes"],
+          "secondary": ["core"]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-## Session-coach capabilities (implemented)
+For intensity guidance use:
 
-- `show_today`
-- `start_workout`
-- `log_workout`
-- `show_last_workout`
-- `suggest_next_workout`
-- `targeted_readiness`
-- `suggest_adjustment`
-- `weekly_snapshot`
-- `micro_progression_suggestion`
-- `create_hybrid_plan`
+```json
+{
+  "action": "suggest_intensity",
+  "nowIso": "2026-04-06T12:00:00Z",
+  "sessions": []
+}
+```
 
-## Readiness decision logic
+## Local test
 
-Readiness returns score + status + decision:
-- `8-10` → `full_intensity`
-- `6-7.99` → `normal_training`
-- `4-5.99` → `reduce_20_percent`
-- `<4` → `active_recovery_or_rest`
-
-## Workout log structure (compact)
-
-- session: `startedAt`, `modality`, optional `durationMin`, `sessionNotes`
-- entry: `exerciseId`, `primary`, `secondary`, `intensity`
-- gym sets: `weightKg`, `reps`, optional `rpe`, `rir`
-- callanetics: `holdSec`, `pulses`, `controlQuality`, `restSec`
-
-## RPE/RIR reference (short)
-
-- RPE 10 = 0 RIR
-- RPE 9 = 1 RIR
-- RPE 8 = 2 RIR
-- RPE 7 = 3 RIR
-- RPE 6 = 4+ RIR
-
-## Micro-progression rules
-
-- Gym: add reps first, then +2.5-5 kg when top range is stable with good RIR.
-- Callanetics: +5-10 sec holds, +5-10 pulses, or shorter rest if quality stays high.
-- If readiness is caution/recover: reduce load/volume or choose lighter variant.
-
-## Weekly snapshot idea
-
-`weekly_snapshot` returns:
-- sessions completed
-- modality mix
-- most loaded muscle groups
-- compact readiness-based weekly note
-
-## Behavior guarantees
-
-- Readiness is checked only in workout-related flows.
-- If status is `ready`, no recovery warning is shown.
-- If status is `caution`/`recover`, exactly one short practical note is added.
-- Tone stays concise and non-medical.
-
-## Local tests
+Run:
 
 ```bash
 node tests/readiness-core.test.js
