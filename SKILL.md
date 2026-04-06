@@ -1,8 +1,6 @@
 ---
 name: fitness-coach-hybrid
 description: A fitness coaching skill that supports gym, callanetics, and hybrid plans with subtle readiness checks shown only in workout-related flows.
-metadata:
-  homepage: https://github.com/google-ai-edge/gallery/tree/main/skills
 ---
 
 # Fitness Coach Hybrid (Gym + Callanetics)
