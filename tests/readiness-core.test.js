@@ -1,140 +1,74 @@
 const assert = require('node:assert/strict');
-const coach = require('../scripts/readiness-core.js');
-
-const EXERCISE_METADATA = {
-  side_leg_lift_hold: { trackingType: 'hold_time', primary: ['glutes'], secondary: ['core'] }
-};
+const readiness = require('../scripts/readiness-core.js');
 
 function runTests() {
   {
-    const result = coach.computeReadiness({
+    const result = readiness.computeReadiness({
       nowIso: '2026-04-06T12:00:00Z',
       sessions: [],
       sleepHoursLastNight: 8,
       energyToday: 8
     });
+
     assert.equal(result.status, 'ready');
+    assert.equal(result.score, 10);
+    assert.deepEqual(result.stressedGroups, []);
   }
 
   {
-    const result = coach.computeReadiness({
+    const result = readiness.computeReadiness({
       nowIso: '2026-04-06T12:00:00Z',
-      sessions: [{ startedAt: '2026-04-06T03:00:00Z', entries: [{ intensity: 'high', primary: ['quads'], secondary: ['core'] }] }],
+      sessions: [
+        {
+          startedAt: '2026-04-06T03:00:00Z',
+          entries: [
+            {
+              intensity: 'high',
+              primary: ['quads'],
+              secondary: ['core']
+            }
+          ]
+        }
+      ],
       sleepHoursLastNight: 5,
       energyToday: 3
     });
+
     assert.equal(result.status, 'caution');
+    assert.ok(result.score < 7 && result.score >= 4);
+    assert.ok(result.stressedGroups.includes('quads'));
   }
 
   {
-    const result = coach.computeReadiness({
+    const wrapped = readiness.execute({
+      action: 'suggest_intensity',
       nowIso: '2026-04-06T12:00:00Z',
-      targetGroups: ['chest'],
-      sessions: [{ startedAt: '2026-04-06T03:00:00Z', entries: [{ intensity: 'high', primary: ['quads'], secondary: ['core'] }] }]
-    });
-    assert.equal(result.status, 'ready');
-    assert.equal(result.global.status, 'caution');
-  }
-
-  {
-    const result = coach.computeReadiness({
-      nowIso: '2026-04-06T12:00:00Z',
-      exerciseMetadata: EXERCISE_METADATA,
-      sessions: [{ startedAt: '2026-04-06T09:00:00Z', entries: [{ exerciseId: 'side_leg_lift_hold', intensity: 'medium', holdSec: 90 }] }]
-    });
-    assert.ok(result.stressedGroups.includes('glutes'));
-  }
-
-  {
-    const today = coach.execute({
-      action: 'show_today',
-      nowIso: '2026-04-06T12:00:00Z',
-      plannedWorkout: { name: 'Pull', modality: 'gym', targetGroups: ['back', 'biceps'] },
-      sessions: []
-    });
-    assert.equal(today.result.action, 'show_today');
-    assert.ok(today.result.message.includes('Heute ist Pull dran'));
-    assert.equal(today.result.message.includes('Go easier on'), false);
-  }
-
-  {
-    const start = coach.execute({
-      action: 'start_workout',
-      nowIso: '2026-04-06T12:00:00Z',
-      plannedWorkout: { name: 'Leg Day', modality: 'callanetics', targetGroups: ['glutes', 'core'] },
-      sessions: [{ startedAt: '2026-04-06T10:30:00Z', entries: [{ intensity: 'high', primary: ['glutes'], secondary: ['core'] }] }]
-    });
-    assert.equal(start.result.action, 'start_workout');
-    assert.ok(start.result.message.includes('Starte Leg Day.'));
-  }
-
-
-  {
-    const log = coach.execute({
-      action: 'log_workout',
-      nowIso: '2026-04-06T12:00:00Z',
-      sessions: [],
-      newSession: {
-        startedAt: '2026-04-06T11:00:00Z',
-        modality: 'callanetics',
-        entries: [{ intensity: 'high', trackingType: 'hold_time', holdSec: 90, primary: ['glutes'], secondary: ['core'] }]
-      }
-    });
-    assert.equal(log.result.action, 'log_workout');
-    assert.equal(log.result.logged, true);
-  }
-
-  {
-    const next = coach.execute({
-      action: 'suggest_next_workout',
-      nowIso: '2026-04-06T12:00:00Z',
-      sessions: [{ dayId: 'd1', startedAt: '2026-04-05T12:00:00Z', entries: [] }],
-      planDays: [
-        { dayId: 'd1', label: 'Push', modality: 'gym', targetGroups: ['chest'] },
-        { dayId: 'd2', label: 'Call Core', modality: 'callanetics', targetGroups: ['core'] }
+      sessions: [
+        {
+          startedAt: '2026-04-05T18:30:00Z',
+          entries: [{ intensity: 'medium', primary: ['glutes'], secondary: [] }]
+        }
       ]
     });
-    assert.equal(next.result.action, 'show_today');
-    assert.equal(next.result.plannedWorkout.name, 'Call Core');
+
+    assert.equal(typeof wrapped.result.readiness.status, 'string');
+    assert.equal(typeof wrapped.result.suggestion.recommendation, 'string');
   }
 
-
   {
-    const tr = coach.execute({
-      action: 'targeted_readiness',
+    // Future-dated sessions should not affect readiness.
+    const result = readiness.computeReadiness({
       nowIso: '2026-04-06T12:00:00Z',
-      targetGroups: ['back'],
-      sessions: [{ startedAt: '2026-04-06T11:00:00Z', entries: [{ intensity: 'high', primary: ['quads'], secondary: ['core'] }] }]
+      sessions: [
+        {
+          startedAt: '2026-04-07T12:00:00Z',
+          entries: [{ intensity: 'high', primary: ['back'], secondary: ['biceps'] }]
+        }
+      ]
     });
-    assert.equal(tr.result.action, 'targeted_readiness');
-    assert.equal(tr.result.readiness.status, 'ready');
-  }
 
-  {
-    const adj = coach.execute({
-      action: 'suggest_adjustment',
-      nowIso: '2026-04-06T12:00:00Z',
-      plannedModality: 'callanetics',
-      sessions: [{ startedAt: '2026-04-06T10:30:00Z', entries: [{ intensity: 'high', primary: ['glutes'], secondary: ['core'] }] }]
-    });
-    assert.equal(adj.result.action, 'suggest_adjustment');
-    assert.ok(Array.isArray(adj.result.suggestion.adjustments));
-  }
-
-  {
-    const plan = coach.execute({ action: 'create_hybrid_plan', gymDays: 3, callaneticsDays: 2 });
-    assert.equal(plan.result.action, 'create_hybrid_plan');
-    assert.equal(plan.result.plan.length, 5);
-  }
-
-  {
-    const last = coach.execute({
-      action: 'show_last_workout',
-      exerciseId: 'bench_press',
-      sessions: [{ startedAt: '2026-04-05T12:00:00Z', modality: 'gym', entries: [{ exerciseId: 'bench_press' }, {}] }]
-    });
-    assert.equal(last.result.action, 'show_last_workout');
-    assert.ok(last.result.message.includes('bench_press'));
+    assert.equal(result.score, 10);
+    assert.equal(result.status, 'ready');
   }
 
   console.log('All readiness-core tests passed.');

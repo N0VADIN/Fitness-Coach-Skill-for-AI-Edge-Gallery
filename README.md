@@ -1,49 +1,56 @@
 # Fitness Coach Hybrid Skill (AI Edge Gallery format)
 
-> V1: compact rules for an AI model + lightweight coach actions.
+This repository is now structured like an AI Edge Gallery skill:
 
-## Repository contents
+- `SKILL.md` with frontmatter metadata + invocation instructions.
+- `scripts/index.html` as Gallery JS entrypoint exposing `ai_edge_gallery_get_result`.
+- `scripts/readiness-core.js` containing readiness and intensity logic.
+- `assets/` JSON reference files for tracking types and exercise metadata.
 
-```text
-SKILL.md
-scripts/index.html
-scripts/readiness-core.js
-assets/exercise_catalog.json
-assets/exercise_metadata.json
-assets/tracking_types.json
-tests/readiness-core.test.js
+## Implemented behavior
+
+- Unified support for `gym`, `callanetics`, `hybrid`.
+- Recovery/readiness remains "silent" by design and should only be surfaced in workout flows.
+- Readiness statuses: `ready`, `caution`, `recover`.
+
+## JS invocation payload
+
+```json
+{
+  "action": "compute_readiness",
+  "nowIso": "2026-04-06T12:00:00Z",
+  "sleepHoursLastNight": 6.5,
+  "energyToday": 5,
+  "sessions": [
+    {
+      "startedAt": "2026-04-05T18:30:00Z",
+      "modality": "callanetics",
+      "entries": [
+        {
+          "exerciseId": "side_leg_lift_hold",
+          "intensity": "medium",
+          "primary": ["glutes"],
+          "secondary": ["core"]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-## Why instructions still matter for an AI model
+For intensity guidance use:
 
-The model still needs short operational rules to avoid forgetting behavior:
-- when to run readiness
-- when not to run readiness
-- when to stay silent (`ready`)
-- how to phrase one short coaching hint (`caution`/`recover`)
+```json
+{
+  "action": "suggest_intensity",
+  "nowIso": "2026-04-06T12:00:00Z",
+  "sessions": []
+}
+```
 
-This repo intentionally uses concise rule-style guidance in `SKILL.md`.
+## Local test
 
-## Implemented actions
-
-- `show_today`
-- `start_workout`
-- `log_workout`
-- `show_last_workout`
-- `suggest_next_workout`
-- `create_hybrid_plan`
-- `targeted_readiness`
-- `suggest_adjustment`
-- `compute_readiness`
-- `suggest_intensity`
-
-## Design intent
-
-- Recovery should stay mostly invisible.
-- For “today” flows: workout first, only add short caution/recovery note when needed.
-- Targeted readiness (`targetGroups`) should be preferred over global-only interpretation.
-
-## Local tests
+Run:
 
 ```bash
 node tests/readiness-core.test.js
