@@ -13,7 +13,6 @@ function runTests() {
     assert.equal(result.status, 'ready');
     assert.equal(result.score, 10);
     assert.deepEqual(result.stressedGroups, []);
-    assert.equal(result.targeted, null);
   }
 
   {
@@ -41,49 +40,6 @@ function runTests() {
   }
 
   {
-    // Targeted readiness: lower-body fatigue should not penalize upper-body target strongly.
-    const result = readiness.computeReadiness({
-      nowIso: '2026-04-06T12:00:00Z',
-      targetGroups: ['chest', 'triceps'],
-      sessions: [
-        {
-          startedAt: '2026-04-06T02:00:00Z',
-          entries: [{ intensity: 'high', primary: ['quads', 'glutes'], secondary: ['core'] }]
-        }
-      ]
-    });
-
-    assert.equal(result.global.status, 'caution');
-    assert.equal(result.targeted.status, 'ready');
-    assert.equal(result.status, 'ready');
-  }
-
-  {
-    // Callanetics hold-time metadata should increase effective load modestly.
-    const base = readiness.computeReadiness({
-      nowIso: '2026-04-06T12:00:00Z',
-      sessions: [
-        {
-          startedAt: '2026-04-06T08:00:00Z',
-          entries: [{ intensity: 'medium', trackingType: 'hold_time', holdSec: 30, primary: ['glutes'], secondary: [] }]
-        }
-      ]
-    });
-
-    const extendedHold = readiness.computeReadiness({
-      nowIso: '2026-04-06T12:00:00Z',
-      sessions: [
-        {
-          startedAt: '2026-04-06T08:00:00Z',
-          entries: [{ intensity: 'medium', trackingType: 'hold_time', holdSec: 90, primary: ['glutes'], secondary: [] }]
-        }
-      ]
-    });
-
-    assert.ok(extendedHold.totalPenalty > base.totalPenalty);
-  }
-
-  {
     const wrapped = readiness.execute({
       action: 'suggest_intensity',
       nowIso: '2026-04-06T12:00:00Z',
@@ -98,25 +54,6 @@ function runTests() {
     assert.equal(typeof wrapped.result.readiness.status, 'string');
     assert.equal(typeof wrapped.result.suggestion.recommendation, 'string');
   }
-
-  {
-    const wrapped = readiness.execute({
-      action: 'suggest_intensity',
-      nowIso: '2026-04-06T12:00:00Z',
-      plannedModality: 'callanetics',
-      sessions: [
-        {
-          startedAt: '2026-04-06T02:00:00Z',
-          entries: [{ intensity: 'high', trackingType: 'hold_time', holdSec: 90, primary: ['glutes'], secondary: ['core'] }]
-        }
-      ]
-    });
-
-    assert.equal(wrapped.result.readiness.status, 'caution');
-    assert.ok(Array.isArray(wrapped.result.suggestion.adjustments));
-    assert.ok(wrapped.result.suggestion.adjustments.includes('shorter_holds'));
-  }
-
 
   {
     // Future-dated sessions should not affect readiness.

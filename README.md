@@ -1,32 +1,19 @@
 # Fitness Coach Hybrid Skill (AI Edge Gallery format)
 
-> V1: lightweight readiness engine with global + target-group checks.
+This repository is now structured like an AI Edge Gallery skill:
 
-## Repository contents (source of truth)
+- `SKILL.md` with frontmatter metadata + invocation instructions.
+- `scripts/index.html` as Gallery JS entrypoint exposing `ai_edge_gallery_get_result`.
+- `scripts/readiness-core.js` containing readiness and intensity logic.
+- `assets/` JSON reference files for tracking types and exercise metadata.
 
-```text
-SKILL.md
-scripts/index.html
-scripts/readiness-core.js
-assets/exercise_catalog.json
-assets/exercise_metadata.json
-assets/tracking_types.json
-tests/readiness-core.test.js
-```
+## Implemented behavior
 
-If a connector cache does not yet show `assets/`, rely on this repository tree as canonical and refresh/reindex.
-
-## Behavior scope (V1)
-
-- Supports `gym`, `callanetics`, `hybrid`.
-- Readiness should be subtle and shown only in workout context.
-- Readiness supports:
-  - **global mode** (all recent stress)
-  - **targeted mode** via `targetGroups` for planned workout relevance.
+- Unified support for `gym`, `callanetics`, `hybrid`.
+- Recovery/readiness remains "silent" by design and should only be surfaced in workout flows.
+- Readiness statuses: `ready`, `caution`, `recover`.
 
 ## JS invocation payload
-
-### Global readiness
 
 ```json
 {
@@ -34,29 +21,36 @@ If a connector cache does not yet show `assets/`, rely on this repository tree a
   "nowIso": "2026-04-06T12:00:00Z",
   "sleepHoursLastNight": 6.5,
   "energyToday": 5,
-  "sessions": []
+  "sessions": [
+    {
+      "startedAt": "2026-04-05T18:30:00Z",
+      "modality": "callanetics",
+      "entries": [
+        {
+          "exerciseId": "side_leg_lift_hold",
+          "intensity": "medium",
+          "primary": ["glutes"],
+          "secondary": ["core"]
+        }
+      ]
+    }
+  ]
 }
 ```
 
-### Targeted readiness for planned workout
+For intensity guidance use:
 
 ```json
 {
   "action": "suggest_intensity",
   "nowIso": "2026-04-06T12:00:00Z",
-  "targetGroups": ["chest", "shoulders", "triceps"],
-  "plannedModality": "gym",
   "sessions": []
 }
 ```
 
-## Hybrid semantics in code
+## Local test
 
-- Main signal: `intensity`.
-- Callanetics-aware modifiers in V1: `holdSec`, `pulses`, `controlQuality`, `formQuality`.
-- Target-group readiness can override global caution when planned groups are fresh.
-
-## Local tests
+Run:
 
 ```bash
 node tests/readiness-core.test.js
