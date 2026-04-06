@@ -1,0 +1,51 @@
+{
+  "readinessDecisionLogic": {
+    "scale": "0-10",
+    "bands": [
+      { "min": 8, "max": 10, "decision": "full_intensity" },
+      { "min": 6, "max": 7.99, "decision": "normal_training" },
+      { "min": 4, "max": 5.99, "decision": "reduce_20_percent" },
+      { "min": 0, "max": 3.99, "decision": "active_recovery_or_rest" }
+    ]
+  },
+  "rpeRirReference": [
+    { "rpe": 10, "rir": 0, "description": "max effort" },
+    { "rpe": 9, "rir": 1, "description": "maybe one rep left" },
+    { "rpe": 8, "rir": 2, "description": "two reps left" },
+    { "rpe": 7, "rir": 3, "description": "moderate" },
+    { "rpe": 6, "rir": 4, "description": "light" }
+  ],
+  "microProgressionRules": {
+    "gym": [
+      "If all sets reach top rep range with <=2 RIR, add 2.5-5 kg next session.",
+      "If load stays same, add 1-2 reps total across sets.",
+      "If recovery is caution, keep weight and reduce 1 set."
+    ],
+    "callanetics": [
+      "Increase hold time by 5-10 seconds when quality stays >=8/10.",
+      "Increase pulses by 5-10 per set when form remains stable.",
+      "Reduce rest by 10-20 seconds only if control quality remains high."
+    ]
+  },
+  "workoutLogTemplate": {
+    "session": {
+      "startedAt": "YYYY-MM-DDTHH:mm:ssZ",
+      "dayId": "optional",
+      "modality": "gym|callanetics|hybrid",
+      "durationMin": 0,
+      "readinessScore": 0,
+      "exercises": [
+        {
+          "exerciseId": "bench_press",
+          "workingSets": [
+            { "weightKg": 0, "reps": 0, "rpe": 0, "rir": 0 }
+          ],
+          "callanetics": { "holdSec": 0, "pulses": 0, "controlQuality": 0, "restSec": 0 },
+          "notes": ""
+        }
+      ],
+      "sessionNotes": "",
+      "nextSessionAdjustments": ""
+    }
+  }
+}

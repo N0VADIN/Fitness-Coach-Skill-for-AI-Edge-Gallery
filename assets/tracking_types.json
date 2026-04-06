@@ -1,0 +1,20 @@
+{
+  "trackingTypes": {
+    "weight_reps_sets": {
+      "requiredSetFields": ["reps", "weightKg"],
+      "optionalSetFields": ["rir", "tempo", "restSec"]
+    },
+    "duration": {
+      "requiredSetFields": ["durationSec"],
+      "optionalSetFields": ["restSec", "intensity"]
+    },
+    "hold_time": {
+      "requiredSetFields": ["holdSec"],
+      "optionalSetFields": ["side", "formQuality"]
+    },
+    "pulses_reps": {
+      "requiredSetFields": ["pulses"],
+      "optionalSetFields": ["side", "rangeOfMotion", "formQuality"]
+    }
+  }
+}
