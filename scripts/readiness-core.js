@@ -9,38 +9,10 @@
     return (later.getTime() - earlier.getTime()) / (1000 * 60 * 60);
   }
 
-  function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-  }
-
-  function inferLoadMultiplier(entry) {
-    let multiplier = 1.0;
-
-    if (entry.trackingType === 'hold_time' && typeof entry.holdSec === 'number') {
-      if (entry.holdSec >= 90) multiplier += 0.3;
-      else if (entry.holdSec >= 60) multiplier += 0.2;
-    }
-
-    if (entry.trackingType === 'pulses_reps' && typeof entry.pulses === 'number') {
-      if (entry.pulses >= 60) multiplier += 0.3;
-      else if (entry.pulses >= 40) multiplier += 0.2;
-    }
-
-    if (typeof entry.controlQuality === 'number') {
-      if (entry.controlQuality >= 8) multiplier += 0.1;
-      if (entry.controlQuality <= 3) multiplier -= 0.1;
-    }
-
-    if (typeof entry.formQuality === 'number' && entry.formQuality <= 3) {
-      multiplier -= 0.05;
-    }
-
-    return clamp(multiplier, 0.7, 1.5);
-  }
-
-  function computePenaltyBuckets(payload) {
+  function computeReadiness(payload) {
     const now = parseIso(payload.nowIso);
     const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
+
     const groupPenalty = {};
 
     for (const session of sessions) {
@@ -52,8 +24,7 @@
 
       const entries = Array.isArray(session.entries) ? session.entries : [];
       for (const entry of entries) {
-        const baseIntensity = INTENSITY_SCORE[entry.intensity] ?? INTENSITY_SCORE.medium;
-        const intensity = baseIntensity * inferLoadMultiplier(entry);
+        const intensity = INTENSITY_SCORE[entry.intensity] ?? INTENSITY_SCORE.medium;
 
         let primaryWeight = 0;
         let secondaryWeight = 0;
@@ -74,22 +45,8 @@
       }
     }
 
-    return groupPenalty;
-  }
+    const totalPenalty = Object.values(groupPenalty).reduce((acc, n) => acc + n, 0);
 
-  function statusForScore(score) {
-    if (score < 4) return 'recover';
-    if (score < 7) return 'caution';
-    return 'ready';
-  }
-
-  function messageForStatus(status) {
-    if (status === 'recover') return 'Prefer lighter training or active recovery today.';
-    if (status === 'caution') return 'Train as planned, but reduce intensity on recently stressed areas.';
-    return 'Training is on track.';
-  }
-
-  function scoreFromPenalty(totalPenalty, payload) {
     let score = 10 - Math.min(totalPenalty, 6);
     if (typeof payload.sleepHoursLastNight === 'number' && payload.sleepHoursLastNight < 6) {
       score -= 1;
@@ -97,55 +54,30 @@
     if (typeof payload.energyToday === 'number' && payload.energyToday <= 4) {
       score -= 1;
     }
-    return Math.max(0, Number(score.toFixed(2)));
-  }
 
-  function computeReadiness(payload) {
-    const groupPenalty = computePenaltyBuckets(payload);
+    score = Math.max(0, Number(score.toFixed(2)));
 
-    const totalPenalty = Object.values(groupPenalty).reduce((acc, n) => acc + n, 0);
-    const globalScore = scoreFromPenalty(totalPenalty, payload);
-    const globalStatus = statusForScore(globalScore);
+    let status = 'ready';
+    let message = 'Training is on track.';
+    if (score < 4) {
+      status = 'recover';
+      message = 'Prefer lighter training or active recovery today.';
+    } else if (score < 7) {
+      status = 'caution';
+      message = 'Train as planned, but reduce intensity on recently stressed areas.';
+    }
 
     const stressedGroups = Object.entries(groupPenalty)
       .filter(([, penalty]) => penalty >= 1)
       .sort((a, b) => b[1] - a[1])
       .map(([group]) => group);
 
-    const targetGroups = Array.isArray(payload.targetGroups) ? payload.targetGroups : [];
-    let targetedPenalty = null;
-    let targetedScore = null;
-    let targetedStatus = null;
-
-    if (targetGroups.length > 0) {
-      targetedPenalty = targetGroups.reduce((sum, group) => sum + (groupPenalty[group] || 0), 0);
-      targetedPenalty = Number(targetedPenalty.toFixed(2));
-      targetedScore = scoreFromPenalty(targetedPenalty, payload);
-      targetedStatus = statusForScore(targetedScore);
-    }
-
-    const effectiveScore = targetedScore ?? globalScore;
-    const effectiveStatus = targetedStatus ?? globalStatus;
-
     return {
-      status: effectiveStatus,
-      score: effectiveScore,
-      message: messageForStatus(effectiveStatus),
+      status,
+      score,
+      message,
       stressedGroups,
-      totalPenalty: Number(totalPenalty.toFixed(2)),
-      global: {
-        status: globalStatus,
-        score: globalScore,
-        totalPenalty: Number(totalPenalty.toFixed(2))
-      },
-      targeted: targetGroups.length > 0
-        ? {
-            targetGroups,
-            status: targetedStatus,
-            score: targetedScore,
-            totalPenalty: targetedPenalty
-          }
-        : null
+      totalPenalty: Number(totalPenalty.toFixed(2))
     };
   }
 
