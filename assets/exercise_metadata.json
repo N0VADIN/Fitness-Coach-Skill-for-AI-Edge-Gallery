@@ -1,0 +1,43 @@
+{
+  "exercises": {
+    "bench_press": {
+      "modality": "gym",
+      "trackingType": "weight_reps_sets",
+      "primary": ["chest"],
+      "secondary": ["shoulders", "triceps"]
+    },
+    "barbell_squat": {
+      "modality": "gym",
+      "trackingType": "weight_reps_sets",
+      "primary": ["quads", "glutes"],
+      "secondary": ["core"]
+    },
+    "deadlift": {
+      "modality": "gym",
+      "trackingType": "weight_reps_sets",
+      "primary": ["hamstrings", "glutes", "back"],
+      "secondary": ["lower_back", "core"]
+    },
+    "wall_sit": {
+      "modality": "callanetics",
+      "trackingType": "duration",
+      "primary": ["quads"],
+      "secondary": ["glutes", "core"],
+      "progressSignals": ["durationSec", "restSec"]
+    },
+    "side_leg_lift_hold": {
+      "modality": "callanetics",
+      "trackingType": "hold_time",
+      "primary": ["glutes"],
+      "secondary": ["core"],
+      "progressSignals": ["holdSec", "formQuality", "controlQuality"]
+    },
+    "tiny_leg_pulses": {
+      "modality": "callanetics",
+      "trackingType": "pulses_reps",
+      "primary": ["glutes", "hamstrings"],
+      "secondary": ["core"],
+      "progressSignals": ["pulses", "rangeOfMotion", "controlQuality"]
+    }
+  }
+}

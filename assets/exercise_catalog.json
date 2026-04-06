@@ -1,0 +1,29 @@
+{
+  "catalogVersion": "v1",
+  "muscleGroups": [
+    "chest",
+    "back",
+    "shoulders",
+    "biceps",
+    "triceps",
+    "quads",
+    "hamstrings",
+    "glutes",
+    "calves",
+    "core",
+    "lower_back"
+  ],
+  "exercisesByModality": {
+    "gym": [
+      "bench_press",
+      "barbell_squat",
+      "deadlift"
+    ],
+    "callanetics": [
+      "wall_sit",
+      "side_leg_lift_hold",
+      "tiny_leg_pulses"
+    ],
+    "hybrid": []
+  }
+}
